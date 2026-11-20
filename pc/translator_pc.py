@@ -43,6 +43,7 @@ VERSION_URL = ("https://raw.githubusercontent.com/stupidiots/"
                "AI-Live-Translator/main/pc_version.json")
 SMARTLINK = "https://asiafilm.org/4/4ddc8d335c6aa45d829f3922abeec120"
 FACEBOOK_URL = "https://www.facebook.com/Airdropgod"
+TELEGRAM_URL = "https://t.me/AirdropVsTermux"
 
 SAMPLE_RATE_IN = 16000          # Gemini Live input: 16 kHz PCM16 mono
 SAMPLE_RATE_OUT = 24000         # Gemini Live output: 24 kHz PCM16 mono
@@ -80,6 +81,7 @@ STR = {
         "translation": "Translation",
         "widget": "Subtitle widget",
         "follow": "Follow on Facebook",
+        "join_tg": "Join Telegram",
         "ready": "Ready",
         "connecting": "Connecting...",
         "live": "Live — translating",
@@ -116,6 +118,7 @@ STR = {
         "translation": "ဘာသာပြန်",
         "widget": "စာတန်း widget",
         "follow": "Facebook မှာ Follow လုပ်ပါ",
+        "join_tg": "Telegram မှာ Join ပါ",
         "ready": "အဆင်သင့်",
         "connecting": "ချိတ်ဆက်နေသည်...",
         "live": "တိုက်ရိုက် — ဘာသာပြန်နေသည်",
@@ -667,6 +670,10 @@ class App:
                                     pady=4, command=lambda:
                                     webbrowser.open(FACEBOOK_URL))
         self.follow_btn.pack(side="right", padx=(0, 8))
+        self.tg_btn = tk.Button(top, bg=PANEL, fg=ACCENT, bd=0, padx=10,
+                                pady=4, command=lambda:
+                                webbrowser.open(TELEGRAM_URL))
+        self.tg_btn.pack(side="right", padx=(0, 8))
 
         body = tk.Frame(self.root, bg=BG)
         body.pack(fill="both", expand=True, padx=14, pady=10)
@@ -769,6 +776,7 @@ class App:
         self.lang_btn.config(text="EN" if self.settings["ui_lang"] == "my"
                              else "မြန်မာ")
         self.follow_btn.config(text=t["follow"])
+        self.tg_btn.config(text=t["join_tg"])
         self.key_lbl.config(text=t["api_key"])
         self.key_hint.config(text=t["key_hint"])
         self.mode_lbl.config(text=t["mode"])
