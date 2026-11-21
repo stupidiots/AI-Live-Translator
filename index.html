@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Live Translator — AI Live ဘာသာပြန်</title>
+<meta name="description" content="Live-translate videos & speech: subtitles + dubbed voice in your language. Free Android & PC app powered by Google Gemini with your own API key.">
+<meta property="og:title" content="AI Live Translator — AI Live ဘာသာပြန်">
+<meta property="og:description" content="ဗီဒီယိုနဲ့ စကားပြောကို တိုက်ရိုက် ဘာသာပြန် — စာတန်းထိုး + အသံပြောင်း။ အခမဲ့။">
+<meta property="og:image" content="feature_graphic.png">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="icon_512.png">
+<style>
+  :root{
+    --bg:#0A0F1E; --card:#111A30; --card2:#0D1526;
+    --text:#E8EEF9; --muted:#9FB0CC;
+    --accent:#22D3EE; --accent2:#818CF8;
+    --border:#1E2C4D;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Myanmar Text",sans-serif;line-height:1.65}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:880px;margin:0 auto;padding:0 18px 60px}
+  header{text-align:center;padding:44px 0 8px}
+  .icon{width:104px;height:104px;border-radius:24px;box-shadow:0 10px 34px rgba(34,211,238,.25)}
+  h1{font-size:32px;margin-top:18px;letter-spacing:.3px}
+  h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{color:var(--muted);font-size:17px;margin-top:8px}
+  .langbar{display:flex;justify-content:flex-end;padding-top:16px}
+  .langbar button{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:999px;padding:6px 16px;font-size:14px;cursor:pointer}
+  .langbar button.active{border-color:var(--accent);color:var(--accent)}
+  .btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+  .btn{display:inline-block;padding:14px 26px;border-radius:14px;font-size:17px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--text)}
+  .btn.primary{background:linear-gradient(90deg,#0E7490,#2563EB);border:none;color:#fff;box-shadow:0 8px 24px rgba(34,211,238,.25)}
+  .btn small{display:block;font-size:12.5px;font-weight:400;opacity:.85}
+  .note{color:var(--muted);font-size:13.5px;margin-top:12px}
+  .hero{width:100%;border-radius:18px;margin-top:30px;border:1px solid var(--border)}
+  section{margin-top:42px}
+  h2{font-size:22px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px}
+  .card .em{font-size:24px}
+  .card h3{font-size:16.5px;margin:8px 0 4px}
+  .card p{color:var(--muted);font-size:14.5px}
+  ol.steps{margin-left:20px;color:var(--muted)}
+  ol.steps li{margin-bottom:8px}
+  ol.steps b{color:var(--text)}
+  .honest{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:18px;color:var(--muted);font-size:14.5px}
+  .honest li{margin:4px 0 4px 18px}
+  .social{display:flex;gap:12px;flex-wrap:wrap}
+  footer{margin-top:48px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--border);padding-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="langbar">
+    <button id="btn-my" class="active" onclick="setLang('my')">မြန်မာ</button>
+    <button id="btn-en" onclick="setLang('en')">English</button>
+  </div>
+
+  <header>
+    <img class="icon" src="icon_512.png" alt="AI Live Translator icon">
+    <h1>AI Live <span class="grad">Translator</span></h1>
+    <p class="tag" data-my="ဗီဒီယိုနဲ့ စကားပြောကို တိုက်ရိုက် ဘာသာပြန် — စာတန်းထိုး + အသံပြောင်း, ဘာသာစကား ၃၀" data-en="Live-translate videos &amp; speech — subtitles + dubbed voice, 30 languages"></p>
+
+    <div class="btns">
+      <a class="btn primary" href="https://github.com/stupidiots/AI-Live-Translator/releases/download/v1.10/GeminiLiveTranslator.apk">
+        <span data-my="Android ဒေါင်းရန်" data-en="Download for Android"></span>
+        <small>APK · v1.10 · <span data-my="အခမဲ့" data-en="Free"></span></small>
+      </a>
+      <a class="btn" href="https://github.com/stupidiots/AI-Live-Translator/releases/download/pc-v1.0/AILiveTranslator.exe">
+        <span data-my="PC (Windows) ဒေါင်းရန်" data-en="Download for PC"></span>
+        <small>EXE · v1.0 · <span data-my="အခမဲ့" data-en="Free"></span></small>
+      </a>
+    </div>
+    <p class="note">
+      <span data-my="အကောင့် မလို · ကိုယ်ပိုင် Gemini API key (အခမဲ့) တော့ လိုပါတယ်" data-en="No account needed · You bring your own free Gemini API key"></span>
+      · <a href="https://github.com/stupidiots/AI-Live-Translator/releases" data-my="Version အားလုံး" data-en="All versions"></a>
+    </p>
+
+    <img class="hero" src="feature_graphic.png" alt="AI Live Translator">
+  </header>
+
+  <!-- ADSTERRA-BANNER-TOP: paste Adsterra banner/native ad code here -->
+
+  <section>
+    <h2 data-my="ဘာတွေ လုပ်ပေးလဲ" data-en="What it does"></h2>
+    <div class="grid">
+      <div class="card"><div class="em">🎬</div>
+        <h3 data-my="Video / Live တိုက်ရိုက် ဘာသာပြန်" data-en="Live video translation"></h3>
+        <p data-my="YouTube, Facebook, TikTok စတဲ့ app တွေမှာ ဖွင့်နေတဲ့ ဗီဒီယိုနဲ့ live stream တွေကို အသံပြောင်း + စာတန်းထိုး တိုက်ရိုက် ဘာသာပြန်ပေးတယ်" data-en="Dubbing + subtitles for videos and live streams playing in other apps — YouTube, Facebook, TikTok and more"></p></div>
+      <div class="card"><div class="em">🎤</div>
+        <h3 data-my="မိုက်ခရိုဖုန်း နည်းလမ်း" data-en="Microphone mode"></h3>
+        <p data-my="အနီးအနားက စကားပြောသံကို မိုက်နဲ့ ဖမ်းပြီး တိုက်ရိုက် ဘာသာပြန်ပေးတယ်" data-en="Translate live speech around you through the microphone"></p></div>
+      <div class="card"><div class="em">💬</div>
+        <h3 data-my="စာတန်းထိုး နှစ်မျိုး + Widget" data-en="Dual subtitles + widget"></h3>
+        <p data-my="မူရင်း စာသားနဲ့ ဘာသာပြန် တွဲပြတယ်။ ဗီဒီယို အပေါ်မှာ ပေါ်နေတဲ့ စာတန်းထိုး widget ကို ရွှေ့/အရွယ်ပြောင်းလို့ ရတယ်" data-en="Original text and translation side by side, in a floating widget you can drag and resize over the video"></p></div>
+      <div class="card"><div class="em">🌐</div>
+        <h3 data-my="ဘာသာစကား ၃၀" data-en="30 languages"></h3>
+        <p data-my="မြန်မာ, အင်္ဂလိပ်, ထိုင်း, တရုတ်, ဂျပန်, ကိုရီးယား, ဟိန္ဒီ, စပိန်, ပြင်သစ်, ဂျာမန်, ဗီယက်နမ် အပါအဝင်။ ပြောနေတဲ့ ဘာသာကို အလိုအလျောက် သိရှိတယ်" data-en="Myanmar, English, Thai, Chinese, Japanese, Korean, Hindi, Spanish, French, German, Vietnamese and more. The spoken language is detected automatically"></p></div>
+      <div class="card"><div class="em">🔊</div>
+        <h3 data-my="AI အသံ ရွေးလို့ရ" data-en="AI voices"></h3>
+        <p data-my="မိန်းမသံ / ယောကျာ်းသံ ရွေးလို့ရပြီး မူရင်း အသံနဲ့ ဘာသာပြန် အသံကို slider နှစ်ခုနဲ့ သပ်သပ် ထိန်းလို့ရတယ်" data-en="Choose female/male AI voices and balance dubbed vs. original audio with two independent sliders"></p></div>
+      <div class="card"><div class="em">🔒</div>
+        <h3 data-my="ကိုယ်ပိုင် Key, ကိုယ်ပိုင် Data" data-en="Your key, your data"></h3>
+        <p data-my="Key က ဖုန်းထဲမှာပဲ နေပြီး Google ဆီကလွဲလို့ ဘယ်ကိုမှ မပို့ဘူး။ Developer က သင့် key, သင့် အသံကို လုံးဝ မမြင်ရဘူး" data-en="Your key stays on your device and is only ever sent to Google. The developer never sees your key, audio or translations"></p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-my="ဘယ်လို စသုံးရမလဲ" data-en="How to start"></h2>
+    <ol class="steps">
+      <li><b data-my="ဒေါင်းပြီး install လုပ်ပါ" data-en="Download and install"></b> — <span data-my="အပေါ်က ခလုတ်နဲ့ Android (သို့) PC version ကို ယူပါ" data-en="use the buttons above for Android or PC"></span></li>
+      <li><b data-my="Gemini API key အခမဲ့ ယူပါ" data-en="Get a free Gemini API key"></b> — <a href="https://aistudio.google.com/app/apikey">Google AI Studio</a> <span data-my="မှာ Google account နဲ့ ဝင်ပြီး key တစ်ခု ထုတ်ပါ" data-en="— sign in with a Google account and create a key"></span></li>
+      <li><b data-my="Key ထည့်ပြီး Start နှိပ်ပါ" data-en="Paste the key and press Start"></b> — <span data-my="ကြားချင်တဲ့ ဘာသာစကားကို ရွေးပြီး ဗီဒီယို ဖွင့်လိုက်ရုံပဲ" data-en="pick your language, play a video, done"></span></li>
+    </ol>
+  </section>
+
+  <!-- ADSTERRA-BANNER-MID: paste Adsterra banner/native ad code here -->
+
+  <section>
+    <h2 data-my="သိထားသင့်တာတွေ" data-en="Good to know"></h2>
+    <div class="honest"><ul>
+      <li data-my="အင်တာနက် လိုတယ်။ တချို့ ဒေသတွေမှာ Gemini API ဆီ ရောက်ဖို့ VPN လိုနိုင်တယ်" data-en="An internet connection is required. In some regions a VPN may be needed to reach the Gemini API"></li>
+      <li data-my="App က အခမဲ့ပါ — Start နှိပ်တဲ့ အခါ ကြော်ငြာ ခဏ ပြပါတယ်, အဲ့ဒါကြောင့် အခမဲ့ ပေးနိုင်တာပါ" data-en="The app is free — a short ad appears when you press Start, which is what keeps it free"></li>
+      <li data-my="Netflix လို DRM အကာအကွယ် ရှိတဲ့ app တွေက အသံဖမ်းတာကို ပိတ်ထားနိုင်တယ် — အဲ့လို ဆိုရင် မိုက်ခရိုဖုန်း နည်းလမ်းကို သုံးပါ" data-en="DRM-protected apps (e.g. Netflix) may block audio capture — use Microphone mode near the speaker instead"></li>
+      <li data-my="ဘာသာပြန် အရည်အသွေးနဲ့ အမြန်နှုန်းက အင်တာနက် connection ပေါ် မူတည်တယ်" data-en="Translation quality and speed depend on your connection"></li>
+    </ul></div>
+  </section>
+
+  <section>
+    <h2 data-my="Community" data-en="Community"></h2>
+    <div class="social">
+      <a class="btn" href="https://www.facebook.com/Airdropgod">Facebook — Airdropgod</a>
+      <a class="btn" href="https://t.me/AirdropVsTermux">Telegram — AirdropVsTermux</a>
+      <a class="btn" href="https://github.com/stupidiots/AI-Live-Translator">GitHub</a>
+    </div>
+  </section>
+
+  <footer>
+    © 2026 AI Live Translator · <span data-my="Google Gemini Live API ကို အသုံးပြုထားသည်" data-en="Powered by the Google Gemini Live API"></span>
+  </footer>
+
+</div>
+<script>
+  function setLang(l){
+    document.querySelectorAll('[data-my]').forEach(function(el){
+      el.innerHTML = el.getAttribute('data-' + l);
+    });
+    document.getElementById('btn-my').classList.toggle('active', l === 'my');
+    document.getElementById('btn-en').classList.toggle('active', l === 'en');
+    document.documentElement.lang = l;
+    try{ localStorage.setItem('ailt-lang', l); }catch(e){}
+  }
+  (function(){
+    var saved = 'my';
+    try{ saved = localStorage.getItem('ailt-lang') || 'my'; }catch(e){}
+    setLang(saved);
+  })();
+</script>
+</body>
+</html>
