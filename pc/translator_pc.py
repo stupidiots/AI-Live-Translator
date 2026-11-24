@@ -33,8 +33,8 @@ except ImportError:  # plain PyAudio has no WASAPI loopback; mic still works
 import websockets
 
 APP_NAME = "AI Live Translator"
-PC_VERSION_CODE = 1
-PC_VERSION_NAME = "1.0"
+PC_VERSION_CODE = 2
+PC_VERSION_NAME = "1.1"
 MODEL = "gemini-3.5-live-translate-preview"
 WS_URL = ("wss://generativelanguage.googleapis.com/ws/"
           "google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent")
@@ -173,10 +173,10 @@ class Settings:
 
 
 class Resampler:
-    """Stateful linear-interpolation resampler to 16 kHz mono float32."""
+    """Stateful linear-interpolation resampler (mono float32)."""
 
-    def __init__(self, src_rate):
-        self.ratio = float(src_rate) / SAMPLE_RATE_IN
+    def __init__(self, src_rate, dst_rate=SAMPLE_RATE_IN):
+        self.ratio = float(src_rate) / float(dst_rate)
         self.leftover = np.zeros(0, dtype=np.float32)
         self.phase = 0.0
 
@@ -196,6 +196,34 @@ class Resampler:
         self.phase = (self.phase + out_len * self.ratio) - consumed
         if self.phase < 0:
             self.phase = 0.0
+        return out
+
+
+class PlaybackResampler:
+    """Stateful linear-interpolation resampler for dub playback
+    (24 kHz -> output device rate), mono float32. Unlike Resampler
+    (capture path, kept as-is), the phase bookkeeping here is exact,
+    so chunked output matches a one-shot resample sample-for-sample."""
+
+    def __init__(self, src_rate, dst_rate):
+        self.step = float(src_rate) / float(dst_rate)
+        self.leftover = np.zeros(0, dtype=np.float32)
+        self.pos = 0.0    # next read position, relative to leftover start
+
+    def process(self, mono_f32):
+        if len(mono_f32) == 0:
+            return np.zeros(0, dtype=np.float32)
+        data = np.concatenate([self.leftover, mono_f32])
+        n = int(np.floor((len(data) - 1 - self.pos) / self.step)) + 1
+        if n <= 0:
+            self.leftover = data
+            return np.zeros(0, dtype=np.float32)
+        idx = self.pos + np.arange(n) * self.step
+        out = np.interp(idx, np.arange(len(data)), data).astype(np.float32)
+        next_pos = self.pos + n * self.step
+        keep_from = int(np.floor(next_pos))
+        self.leftover = data[keep_from:]
+        self.pos = next_pos - keep_from
         return out
 
 
@@ -461,7 +489,8 @@ class GeminiClient:
 
 class AudioEngine:
     """WASAPI loopback (system audio) or microphone capture -> 16 kHz mono
-    PCM chunks; dub playback at 24 kHz with software volume."""
+    PCM chunks; dub playback resampled from 24 kHz to the output device's
+    own sample rate, with software volume."""
 
     def __init__(self, on_chunk, on_error):
         self.on_chunk = on_chunk        # called with bytes (100 ms, 16 kHz)
@@ -469,6 +498,8 @@ class AudioEngine:
         self.pa = None
         self.in_stream = None
         self.out_stream = None
+        self.out_rate = SAMPLE_RATE_OUT
+        self.out_resampler = None
         self.capture_thread = None
         self.play_thread = None
         self.running = False
@@ -525,17 +556,52 @@ class AudioEngine:
                               frames_per_buffer=1024)
         return stream, rate, channels
 
+    def _open_output(self, dub_device_index):
+        """Open the dub output stream at a rate the device accepts.
+
+        Gemini audio is 24 kHz, but many output devices (USB headsets,
+        some onboard audio) do not offer 24000 Hz at all, and PortAudio
+        then raises -9997 'Invalid sample rate'. Open at the device's own
+        default rate (falling back to common rates) and resample the
+        24 kHz dub audio in software. Returns (stream, rate).
+        """
+        idx = None
+        if dub_device_index is not None and dub_device_index >= 0:
+            idx = dub_device_index
+        dev_rate = None
+        try:
+            if idx is not None:
+                dev = self.pa.get_device_info_by_index(idx)
+            else:
+                dev = self.pa.get_default_output_device_info()
+            dev_rate = int(dev["defaultSampleRate"])
+        except Exception:
+            dev_rate = None
+        candidates = []
+        for r in (dev_rate, 48000, 44100, SAMPLE_RATE_OUT):
+            if r and r not in candidates:
+                candidates.append(r)
+        last_err = None
+        for rate in candidates:
+            try:
+                stream = self.pa.open(
+                    format=pyaudio.paInt16, channels=1, rate=rate,
+                    output=True, output_device_index=idx,
+                    frames_per_buffer=1024)
+                return stream, rate
+            except Exception as e:
+                last_err = e
+        raise last_err
+
     # ---------- lifecycle ----------
     def start(self, mode, dub_device_index=-1):
         self.stop()
         self.pa = pyaudio.PyAudio()
         self.in_stream, rate, channels = self._open_input(mode)
-        self.out_stream = self.pa.open(
-            format=pyaudio.paInt16, channels=1, rate=SAMPLE_RATE_OUT,
-            output=True,
-            output_device_index=(None if dub_device_index is None or
-                                 dub_device_index < 0 else dub_device_index),
-            frames_per_buffer=1024)
+        self.out_stream, self.out_rate = self._open_output(dub_device_index)
+        self.out_resampler = (PlaybackResampler(SAMPLE_RATE_OUT,
+                                                self.out_rate)
+                              if self.out_rate != SAMPLE_RATE_OUT else None)
         self.running = True
         self.capture_thread = threading.Thread(
             target=self._capture_loop, args=(rate, channels), daemon=True)
@@ -554,6 +620,7 @@ class AudioEngine:
                     pass
         self.in_stream = None
         self.out_stream = None
+        self.out_resampler = None
         if self.pa is not None:
             try:
                 self.pa.terminate()
@@ -604,7 +671,17 @@ class AudioEngine:
             if self.out_stream is None:
                 continue
             try:
-                if self.volume != 1.0:
+                if self.out_resampler is not None:
+                    arr = np.frombuffer(data, dtype=np.int16).astype(
+                        np.float32) / 32768.0
+                    arr = self.out_resampler.process(arr)
+                    if len(arr) == 0:
+                        continue
+                    if self.volume != 1.0:
+                        arr = arr * self.volume
+                    data = (np.clip(arr, -1.0, 1.0) * 32767.0).astype(
+                        np.int16).tobytes()
+                elif self.volume != 1.0:
                     arr = np.frombuffer(data, dtype=np.int16).astype(np.float32)
                     arr = np.clip(arr * self.volume, -32768, 32767)
                     data = arr.astype(np.int16).tobytes()
