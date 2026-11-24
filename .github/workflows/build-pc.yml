@@ -6,7 +6,6 @@ on:
     paths:
       - "pc/**"
       - ".github/workflows/build-pc.yml"
-
 jobs:
   build:
     runs-on: windows-latest
@@ -14,34 +13,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r pc/requirements.txt pyinstaller
-
       - name: Build exe
         working-directory: pc
         run: pyinstaller --onefile --windowed --name AILiveTranslator translator_pc.py
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: AILiveTranslator-PC
           path: pc/dist/AILiveTranslator.exe
-
-      - name: Publish release pc-v1.0
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: pc-v1.0
-          name: AI Live Translator PC v1.0
-          body: |
-            Windows version of AI Live Translator (mirrors Android v1.9).
-            Download AILiveTranslator.exe and run it — no install needed.
-            First launch: Windows SmartScreen may warn because the exe is unsigned — choose "More info" -> "Run anyway".
-            You need your own Gemini API key (Google AI Studio).
-          files: pc/dist/AILiveTranslator.exe
